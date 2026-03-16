@@ -53,8 +53,11 @@ export const Dashboard: React.FC = () => {
     try {
       const res = await fetch(`/api/trades/${profile.uid}`);
       if (res.ok) {
-        const data = await res.json();
-        setTrades(data);
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const data = await res.json();
+          setTrades(data);
+        }
       }
     } catch (err) {
       console.error("Fetch trades error:", err);
@@ -64,17 +67,23 @@ export const Dashboard: React.FC = () => {
   const fetchBrokerData = async (email: string, type: string) => {
     try {
       const balanceRes = await fetch(`/api/bullex/balance?email=${email}&type=${type}`);
-      const balanceData = await balanceRes.json();
-      if (balanceData.success) {
-        if (type === 'real') setRealBalance(balanceData.balance);
-        else setDemoBalance(balanceData.balance);
+      const balanceCT = balanceRes.headers.get("content-type");
+      if (balanceRes.ok && balanceCT && balanceCT.includes("application/json")) {
+        const balanceData = await balanceRes.json();
+        if (balanceData.success) {
+          if (type === 'real') setRealBalance(balanceData.balance);
+          else setDemoBalance(balanceData.balance);
+        }
       }
 
       const assetsRes = await fetch(`/api/bullex/assets?email=${email}`);
-      const assetsData = await assetsRes.json();
-      if (assetsData.success && assetsData.assets.length > 0) {
-        setAvailableAssets(assetsData.assets);
-        setAsset(assetsData.assets[0]);
+      const assetsCT = assetsRes.headers.get("content-type");
+      if (assetsRes.ok && assetsCT && assetsCT.includes("application/json")) {
+        const assetsData = await assetsRes.json();
+        if (assetsData.success && assetsData.assets.length > 0) {
+          setAvailableAssets(assetsData.assets);
+          setAsset(assetsData.assets[0]);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -89,16 +98,21 @@ export const Dashboard: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: pass })
       });
-      const data = await res.json();
       
-      if (data.success) {
-        setBrokerEmail(email);
-        setBrokerPass(pass);
-        setAccountType(type);
-        setIsBrokerConnected(true);
-        await fetchBrokerData(email, type);
+      const contentType = res.headers.get("content-type");
+      if (res.ok && contentType && contentType.includes("application/json")) {
+        const data = await res.json();
+        if (data.success) {
+          setBrokerEmail(email);
+          setBrokerPass(pass);
+          setAccountType(type);
+          setIsBrokerConnected(true);
+          await fetchBrokerData(email, type);
+        } else {
+          alert("Erro ao conectar à Bullex: " + data.message);
+        }
       } else {
-        alert("Erro ao conectar à Bullex: " + data.message);
+        alert("Erro no servidor da Bullex. Verifique o console.");
       }
     } catch (err: any) {
       alert("Erro local: " + err.message);
@@ -112,10 +126,13 @@ export const Dashboard: React.FC = () => {
     if (isBrokerConnected && brokerEmail) {
       try {
         const balanceRes = await fetch(`/api/bullex/balance?email=${brokerEmail}&type=${newType}`);
-        const balanceData = await balanceRes.json();
-        if (balanceData.success) {
-          if (newType === 'real') setRealBalance(balanceData.balance);
-          else setDemoBalance(balanceData.balance);
+        const contentType = balanceRes.headers.get("content-type");
+        if (balanceRes.ok && contentType && contentType.includes("application/json")) {
+          const balanceData = await balanceRes.json();
+          if (balanceData.success) {
+            if (newType === 'real') setRealBalance(balanceData.balance);
+            else setDemoBalance(balanceData.balance);
+          }
         }
       } catch (err) {
         console.error(err);
@@ -207,11 +224,15 @@ export const Dashboard: React.FC = () => {
             duration: durationMin
           })
         });
-        const data = await res.json();
-        if (!data.success) {
-           console.error("Falha ao abrir ordem na Bullex: ", data.message);
-        } else {
-           console.log("Ordem aberta na Bullex! ID:", data.order_id);
+        
+        const contentType = res.headers.get("content-type");
+        if (res.ok && contentType && contentType.includes("application/json")) {
+          const data = await res.json();
+          if (!data.success) {
+             console.error("Falha ao abrir ordem na Bullex: ", data.message);
+          } else {
+             console.log("Ordem aberta na Bullex! ID:", data.order_id);
+          }
         }
       } catch (err) {
         console.error("Erro na API da Bullex:", err);

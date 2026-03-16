@@ -37,9 +37,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const res = await fetch(`/api/profile/${uid}`);
       if (res.ok) {
-        const data = await res.json();
-        setProfile(data);
-        setUser({ uid: data.uid });
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const data = await res.json();
+          setProfile(data);
+          setUser({ uid: data.uid });
+        } else {
+          const text = await res.text();
+          console.error("Profile API returned non-JSON:", text.substring(0, 100));
+          logout();
+        }
       } else {
         logout();
       }
@@ -58,15 +65,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       body: JSON.stringify({ username, password })
     });
     
+    const contentType = res.headers.get("content-type");
     if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || 'Erro ao entrar');
+      if (contentType && contentType.includes("application/json")) {
+        const data = await res.json();
+        throw new Error(data.error || 'Erro ao entrar');
+      } else {
+        const text = await res.text();
+        console.error("Login error response (non-JSON):", text.substring(0, 100));
+        throw new Error(`Erro no servidor (Status: ${res.status}). Verifique se o deploy está correto.`);
+      }
     }
 
-    const data = await res.json();
-    setProfile(data);
-    setUser({ uid: data.uid });
-    localStorage.setItem('profitus_uid', data.uid);
+    if (contentType && contentType.includes("application/json")) {
+      const data = await res.json();
+      setProfile(data);
+      setUser({ uid: data.uid });
+      localStorage.setItem('profitus_uid', data.uid);
+    } else {
+      const text = await res.text();
+      console.error("Login success response was not JSON:", text.substring(0, 100));
+      throw new Error("Resposta do servidor inválida. Verifique o console para detalhes.");
+    }
   };
 
   const register = async (regData: any) => {
@@ -76,15 +96,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       body: JSON.stringify(regData)
     });
     
+    const contentType = res.headers.get("content-type");
     if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || 'Erro ao cadastrar');
+      if (contentType && contentType.includes("application/json")) {
+        const data = await res.json();
+        throw new Error(data.error || 'Erro ao cadastrar');
+      } else {
+        const text = await res.text();
+        throw new Error(`Erro no servidor: ${res.status}`);
+      }
     }
 
-    const data = await res.json();
-    setProfile(data);
-    setUser({ uid: data.uid });
-    localStorage.setItem('profitus_uid', data.uid);
+    if (contentType && contentType.includes("application/json")) {
+      const data = await res.json();
+      setProfile(data);
+      setUser({ uid: data.uid });
+      localStorage.setItem('profitus_uid', data.uid);
+    } else {
+      throw new Error("Resposta do servidor inválida.");
+    }
   };
 
   const logout = () => {

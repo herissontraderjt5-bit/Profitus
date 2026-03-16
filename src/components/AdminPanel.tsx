@@ -16,8 +16,11 @@ export const AdminPanel: React.FC = () => {
     try {
       const res = await fetch('/api/admin/users');
       if (res.ok) {
-        const data = await res.json();
-        setUsers(data);
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const data = await res.json();
+          setUsers(data);
+        }
       }
     } catch (err) {
       console.error("Fetch users error:", err);

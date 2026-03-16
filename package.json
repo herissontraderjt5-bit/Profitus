@@ -37,5 +37,13 @@
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
+  },
+  "overrides": {
+    "glob": "^13.0.6",
+    "node-domexception": "^2.0.2",
+    "@google/genai": {
+      "glob": "^13.0.6",
+      "node-domexception": "^2.0.2"
+    }
   }
 }

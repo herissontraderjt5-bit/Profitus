@@ -25,6 +25,10 @@ async function startServer() {
   app.use(cors());
   app.use(bodyParser.json());
 
+  app.get('/api/ping', (req, res) => {
+    res.json({ pong: true, time: new Date().toISOString() });
+  });
+
   app.post('/api/register', async (req, res) => {
     const { username, password, displayName, phone } = req.body;
     

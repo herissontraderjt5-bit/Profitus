@@ -4,10 +4,16 @@ import bodyParser from 'body-parser';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 
-dotenv.config();
+console.log("Iniciando API...");
+console.log("Supabase URL configurada:", !!process.env.VITE_SUPABASE_URL);
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error("ERRO: VITE_SUPABASE_URL ou VITE_SUPABASE_ANON_KEY não configurados!");
+}
+
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const app = express();
@@ -244,7 +250,12 @@ app.post('/api/bullex/connect', async (req, res) => {
     const data = await response.json();
     res.status(response.status).json(data);
   } catch (err: any) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error("Bullex Connect Error:", err.message);
+    res.status(500).json({ 
+      error: 'Erro de conexão com o microserviço Bullex', 
+      details: err.message,
+      help: "Verifique se o serviço Python está rodando e acessível." 
+    });
   }
 });
 
@@ -256,7 +267,8 @@ app.get('/api/bullex/balance', async (req, res) => {
     const data = await response.json();
     res.status(response.status).json(data);
   } catch (err: any) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error("Bullex Balance Error:", err.message);
+    res.status(500).json({ error: 'Erro ao buscar saldo', details: err.message });
   }
 });
 
@@ -267,7 +279,8 @@ app.get('/api/bullex/assets', async (req, res) => {
     const data = await response.json();
     res.status(response.status).json(data);
   } catch (err: any) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error("Bullex Assets Error:", err.message);
+    res.status(500).json({ error: 'Erro ao buscar ativos', details: err.message });
   }
 });
 
@@ -281,7 +294,8 @@ app.post('/api/bullex/trade', async (req, res) => {
     const data = await response.json();
     res.status(response.status).json(data);
   } catch (err: any) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error("Bullex Trade Error:", err.message);
+    res.status(500).json({ error: 'Erro ao executar trade', details: err.message });
   }
 });
 
